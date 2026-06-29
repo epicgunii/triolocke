@@ -590,6 +590,7 @@
       document.getElementById('app').style.display = 'block';
 
       onSnapshot(doc(db, 'jugadores', perfilUID), (snap) => {
+        console.log("snap exists:", snap.exists(), "data:", JSON.stringify(snap.data()));
         if (!snap.exists()) return;
         perfilData = snap.data();
         renderPerfil();
