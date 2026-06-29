@@ -164,75 +164,121 @@
       margin-bottom: 32px;
     }
 
+    /* POKEMON CARD */
     .pokemon-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, transform 0.2s;
     }
 
-    .pokemon-card:hover { border-color: #3a4060; }
-    .pokemon-card.dead { opacity: 0.5; border-color: var(--accent); }
+    .pokemon-card:hover { border-color: var(--tipo1, #3a4060); transform: translateY(-2px); }
+    .pokemon-card.dead { opacity: 0.5; filter: grayscale(0.8); }
 
-    .pokemon-card-header {
+    .poke-card-top {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 14px;
-      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .poke-card-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--tipo1, #2a2f4a)33, var(--tipo2, #2a2f4a)11);
+      pointer-events: none;
     }
 
     .poke-sprite-big {
-      width: 56px;
-      height: 56px;
+      width: 72px;
+      height: 72px;
       image-rendering: pixelated;
       flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
     }
 
-    .poke-main-info { flex: 1; }
-    .poke-apodo { font-size: 15px; font-weight: 700; }
-    .poke-nombre { font-size: 12px; color: var(--muted); }
-    .poke-nivel { font-size: 12px; color: var(--accent2); margin-top: 2px; }
+    .poke-card-info {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
 
-    .dead-badge {
+    .poke-apodo { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .poke-nombre { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .poke-nivel { font-size: 12px; color: var(--text); }
+    .poke-nivel strong { color: var(--tipo1, var(--accent2)); }
+
+    .dead-ribbon {
+      position: absolute;
+      top: 10px;
+      right: -22px;
       background: var(--accent);
       color: #fff;
       font-size: 10px;
       font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
+      padding: 4px 28px;
+      transform: rotate(35deg);
+      z-index: 2;
+      white-space: nowrap;
     }
 
-    .pokemon-card-body { padding: 12px 14px; }
-
-    .poke-detail-row {
+    .poke-card-body {
+      padding: 10px 16px 14px;
       display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 6px;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .poke-detail-label { color: var(--muted); }
-    .poke-detail-value { font-weight: 600; }
+    .poke-meta-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-    .movimientos-list {
+    .poke-meta-item {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .poke-meta-label {
+      color: var(--muted);
+      margin-right: 2px;
+    }
+
+    .poke-objeto {
+      font-size: 12px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 5px 10px;
+      width: fit-content;
+    }
+
+    .poke-movs {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
-      margin-top: 4px;
     }
 
-    .movimiento-tag {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 4px;
+    .mov-tag {
       font-size: 11px;
-      padding: 3px 8px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+      white-space: nowrap;
     }
 
-    .pokemon-card-footer {
-      padding: 10px 14px;
+    .poke-card-footer {
+      padding: 10px 16px;
       border-top: 1px solid var(--border);
       display: flex;
       gap: 8px;
@@ -456,8 +502,11 @@
     .selector-item.selected { border-color: var(--accent); background: rgba(230,57,70,0.1); color: var(--accent); }
 
     .tipo-badge {
-      font-size: 14px;
+      width: 32px;
+      height: 14px;
+      object-fit: contain;
       flex-shrink: 0;
+      image-rendering: pixelated;
     }
 
     .item-sprite {
@@ -714,6 +763,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+    import { MOVIMIENTOS, OBJETOS, TIPOS } from './datos.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyDbe70TRHespj7KW60VpOroh6_-Kqp9oXg",
@@ -805,31 +855,63 @@
       grid.innerHTML = html;
     }
 
+    function getTipoColor(tipo) {
+      const COLORES = {
+        normal:'#A8A878', fire:'#F08030', water:'#6890F0', electric:'#F8D030',
+        grass:'#78C850', ice:'#98D8D8', fighting:'#C03028', poison:'#A040A0',
+        ground:'#E0C068', flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
+        rock:'#B8A038', ghost:'#705898', dragon:'#7038F8', dark:'#705848',
+        steel:'#B8B8D0', fairy:'#EE99AC'
+      };
+      return COLORES[tipo] || '#6b7280';
+    }
+
+    function getMovTipo(nombre) {
+      const mov = MOVIMIENTOS.find(m => m.nombre === nombre);
+      return mov ? mov.tipo : null;
+    }
+
     function pokemonCard(p, i) {
       const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.pokedex || 0}.png`;
       const movs = [p.mov1, p.mov2, p.mov3, p.mov4].filter(Boolean);
-      const botonesEdicion = esPropio ? `
-        <button class="btn-small" onclick="abrirModal(${i})">Editar</button>
-        ${!p.muerto ? `<button class="btn-danger" onclick="marcarMuerto(${i})">☠️ Muerto</button>` : ''}
-      ` : '';
 
-      return `<div class="pokemon-card ${p.muerto ? 'dead' : ''}">
-        <div class="pokemon-card-header">
+      // Color del tipo del pokemon (lo sacamos de la API cuando cargamos el sprite)
+      const tipoColor = p.tipoColor || '#2a2f4a';
+      const tipoColor2 = p.tipoColor2 || tipoColor;
+
+      const objetoSprite = p.objetoSprite
+        ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.objetoSprite}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />`
+        : '';
+
+      const movsHtml = movs.map(m => {
+        const tipo = getMovTipo(m);
+        const color = tipo ? getTipoColor(tipo) : '#3a4060';
+        return `<span class="mov-tag" style="background:${color}22;border-color:${color}55;color:${color}">${m}</span>`;
+      }).join('');
+
+      return `<div class="pokemon-card ${p.muerto ? 'dead' : ''}" style="--tipo1:${tipoColor};--tipo2:${tipoColor2}">
+        <div class="poke-card-top">
+          ${p.muerto ? '<div class="dead-ribbon">☠️ CAÍDO</div>' : ''}
+          <div class="poke-card-bg"></div>
           <img class="poke-sprite-big" src="${sprite}" onerror="this.style.display='none'" />
-          <div class="poke-main-info">
+          <div class="poke-card-info">
             <div class="poke-apodo">${p.apodo || '???'}</div>
             <div class="poke-nombre">#${p.pokedex || '?'} ${p.nombre || ''}</div>
-            <div class="poke-nivel">Nv. ${p.nivel || '?'}</div>
+            <div class="poke-nivel">Nv. <strong>${p.nivel || '?'}</strong></div>
           </div>
-          ${p.muerto ? '<span class="dead-badge">☠️ CAÍDO</span>' : ''}
         </div>
-        <div class="pokemon-card-body">
-          ${p.naturaleza ? `<div class="poke-detail-row"><span class="poke-detail-label">Naturaleza</span><span class="poke-detail-value">${p.naturaleza}</span></div>` : ''}
-          ${p.objeto ? `<div class="poke-detail-row"><span class="poke-detail-label">Objeto</span><span class="poke-detail-value">${p.objeto}</span></div>` : ''}
-          ${p.ruta ? `<div class="poke-detail-row"><span class="poke-detail-label">Capturado en</span><span class="poke-detail-value">${p.ruta}</span></div>` : ''}
-          ${movs.length ? `<div class="movimientos-list">${movs.map(m => `<span class="movimiento-tag">${m}</span>`).join('')}</div>` : ''}
+        <div class="poke-card-body">
+          <div class="poke-meta-row">
+            ${p.naturaleza ? `<span class="poke-meta-item"><span class="poke-meta-label">Nat.</span> ${p.naturaleza}</span>` : ''}
+            ${p.ruta ? `<span class="poke-meta-item"><span class="poke-meta-label">📍</span> ${p.ruta}</span>` : ''}
+          </div>
+          ${p.objeto ? `<div class="poke-objeto">${objetoSprite}${p.objeto}</div>` : ''}
+          ${movs.length ? `<div class="poke-movs">${movsHtml}</div>` : ''}
         </div>
-        ${esPropio ? `<div class="pokemon-card-footer">${botonesEdicion}</div>` : ''}
+        ${esPropio ? `<div class="poke-card-footer">
+          <button class="btn-small" onclick="abrirModal(${i})">Editar</button>
+          ${!p.muerto ? `<button class="btn-danger" onclick="marcarMuerto(${i})">☠️ Muerto</button>` : ''}
+        </div>` : ''}
       </div>`;
     }
 
@@ -900,21 +982,38 @@
         const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${num}`);
         const data = await res.json();
         const nombre = data.name.charAt(0).toUpperCase() + data.name.slice(1);
-        const tipos = data.types.map(t => t.type.name).join(' / ');
+        const tipos = data.types.map(t => t.type.name);
+        const COLORES = {
+          normal:'#A8A878', fire:'#F08030', water:'#6890F0', electric:'#F8D030',
+          grass:'#78C850', ice:'#98D8D8', fighting:'#C03028', poison:'#A040A0',
+          ground:'#E0C068', flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
+          rock:'#B8A038', ghost:'#705898', dragon:'#7038F8', dark:'#705848',
+          steel:'#B8B8D0', fairy:'#EE99AC'
+        };
+        window._pokemonNombre = nombre;
+        window._tipoColor = COLORES[tipos[0]] || '#2a2f4a';
+        window._tipoColor2 = tipos[1] ? (COLORES[tipos[1]] || window._tipoColor) : window._tipoColor;
+
+        const tiposLabel = tipos.map(t => {
+          const color = COLORES[t] || '#6b7280';
+          return `<span style="background:${color}33;color:${color};border:1px solid ${color}55;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
+        }).join(' ');
+
         document.getElementById('modal-preview').innerHTML = `
           <img class="modal-sprite" src="${sprite}" />
           <div>
             <div class="modal-poke-name">${nombre}</div>
-            <div class="modal-poke-types">${tipos}</div>
+            <div class="modal-poke-types" style="display:flex;gap:6px;margin-top:6px">${tiposLabel}</div>
           </div>
         `;
         if (!document.getElementById('input-apodo').value) {
           document.getElementById('input-apodo').value = nombre;
         }
-        window._pokemonNombre = nombre;
       } catch {
         document.getElementById('modal-preview').innerHTML = `<img class="modal-sprite" src="${sprite}" /><div style="color:var(--muted);font-size:13px">Pokémon #${num}</div>`;
         window._pokemonNombre = '';
+        window._tipoColor = '#2a2f4a';
+        window._tipoColor2 = '#2a2f4a';
       }
     };
 
@@ -924,18 +1023,24 @@
       const nivel = parseInt(document.getElementById('input-nivel').value) || 0;
       if (!pokedex || !apodo) { alert('Introduce al menos el número de Pokédex y el apodo.'); return; }
 
+      const objetoNombre = document.getElementById('input-objeto').value.trim();
+      const objetoData = OBJETOS.find(o => o.nombre === objetoNombre);
+
       const pokemon = {
         pokedex,
         nombre: window._pokemonNombre || '',
         apodo,
         nivel,
         naturaleza: document.getElementById('input-naturaleza').value,
-        objeto: document.getElementById('input-objeto').value.trim(),
+        objeto: objetoNombre,
+        objetoSprite: objetoData ? objetoData.sprite : '',
         ruta: document.getElementById('input-ruta').value.trim(),
-        mov1: document.getElementById('mov1').value.trim(),
-        mov2: document.getElementById('mov2').value.trim(),
-        mov3: document.getElementById('mov3').value.trim(),
-        mov4: document.getElementById('mov4').value.trim(),
+        mov1: document.getElementById('mov1').value,
+        mov2: document.getElementById('mov2').value,
+        mov3: document.getElementById('mov3').value,
+        mov4: document.getElementById('mov4').value,
+        tipoColor: window._tipoColor || '#2a2f4a',
+        tipoColor2: window._tipoColor2 || '#2a2f4a',
         muerto: false
       };
 
@@ -997,8 +1102,6 @@
     }
 
     // SELECTOR MOVIMIENTOS Y OBJETOS
-    import { MOVIMIENTOS, OBJETOS, TIPOS } from './datos.js';
-
     let selectorModo = null; // 'mov' o 'objeto'
     let selectorMovIdx = null;
     let selectorDatos = [];
@@ -1040,15 +1143,16 @@
       html += datos.map(d => {
         const sel = valorActual === d.nombre ? 'selected' : '';
         if (esObjeto) {
-          const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${d.id}.png`;
+          const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${d.sprite}`;
           return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g, "\\'")}')">
             <img class="item-sprite" src="${sprite}" onerror="this.style.display='none'" />
             ${d.nombre}
           </div>`;
         } else {
-          const tipo = TIPOS[d.tipo] || { emoji: '⬜' };
+          const tipo = TIPOS[d.tipo] || { id: 1 };
+          const tipoSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tipo.id}.png`;
           return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g, "\\'")}')">
-            <span class="tipo-badge">${tipo.emoji}</span>
+            <img class="tipo-badge" src="${tipoSprite}" onerror="this.style.display='none'" />
             ${d.nombre}
           </div>`;
         }
