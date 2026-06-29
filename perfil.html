@@ -516,6 +516,37 @@
       flex-shrink: 0;
     }
 
+    .selector-tipo-filtro {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .tipo-filtro-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--muted);
+      transition: all 0.15s;
+      background: var(--surface2);
+    }
+
+    .tipo-filtro-item img {
+      height: 14px;
+      image-rendering: pixelated;
+    }
+
+    .tipo-filtro-item:hover { border-color: var(--accent2); }
+    .tipo-filtro-item.activo { border-color: var(--accent); background: rgba(230,57,70,0.15); color: var(--accent); }
+
     .selector-none {
       display: flex;
       align-items: center;
@@ -532,7 +563,55 @@
     }
     .selector-none:hover { border-color: var(--muted); color: var(--text); }
 
-    .modal-footer {
+    /* MOBILE */
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      .logo { font-size: 11px; }
+      .header-right { gap: 8px; }
+      .btn-small { padding: 6px 10px; font-size: 11px; }
+      main { padding: 16px 12px; }
+
+      .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+      }
+      .profile-stats { gap: 16px; }
+      .profile-name { font-size: 16px; }
+
+      .team-grid { grid-template-columns: 1fr; }
+
+      .poke-card-top { padding: 12px; }
+      .poke-sprite-big { width: 60px; height: 60px; }
+      .poke-apodo { font-size: 14px; }
+      .poke-card-body { padding: 8px 12px 12px; }
+      .poke-card-footer { padding: 8px 12px; flex-wrap: wrap; }
+      .poke-card-footer button { flex: 1; }
+
+      .movimientos-inputs { grid-template-columns: 1fr; }
+
+      .modal { max-width: 100%; margin: 0; border-radius: 16px 16px 0 0; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal-body { padding: 16px; }
+      .modal-header { padding: 16px; }
+      .modal-footer { padding: 12px 16px; }
+
+      .selector-modal { max-width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; }
+      .selector-overlay { align-items: flex-end; padding: 0; }
+
+      .selector-tipo-filtro { gap: 4px; padding: 8px 10px; }
+      .tipo-filtro-item { padding: 3px 6px; }
+      .tipo-filtro-item img { height: 12px; }
+
+      .selector-item { font-size: 11px; padding: 6px 10px; }
+      .tipo-badge { width: 28px; height: 12px; }
+      .item-sprite { width: 20px; height: 20px; }
+
+      .cemetery-grid { gap: 6px; }
+      .dead-poke { padding: 6px 10px; }
+    }
+  </style>
       padding: 16px 24px;
       border-top: 1px solid var(--border);
       display: flex;
@@ -701,6 +780,7 @@
             </div>
           </div>
           <input type="hidden" id="input-objeto" />
+          <input type="hidden" id="input-objeto-sprite" />
         </div>
 
         <div class="form-group">
@@ -716,24 +796,28 @@
                 <span id="mov1-display">— Movimiento 1 —</span>
               </div>
               <input type="hidden" id="mov1" />
+              <input type="hidden" id="mov1-tipo" />
             </div>
             <div class="selector-btn-wrap">
               <div class="selector-selected" id="mov2-selected" onclick="window.abrirSelectorMov(2)">
                 <span id="mov2-display">— Movimiento 2 —</span>
               </div>
               <input type="hidden" id="mov2" />
+              <input type="hidden" id="mov2-tipo" />
             </div>
             <div class="selector-btn-wrap">
               <div class="selector-selected" id="mov3-selected" onclick="window.abrirSelectorMov(3)">
                 <span id="mov3-display">— Movimiento 3 —</span>
               </div>
               <input type="hidden" id="mov3" />
+              <input type="hidden" id="mov3-tipo" />
             </div>
             <div class="selector-btn-wrap">
               <div class="selector-selected" id="mov4-selected" onclick="window.abrirSelectorMov(4)">
                 <span id="mov4-display">— Movimiento 4 —</span>
               </div>
               <input type="hidden" id="mov4" />
+              <input type="hidden" id="mov4-tipo" />
             </div>
           </div>
         </div>
@@ -752,9 +836,11 @@
         <div class="modal-title" id="selector-title">Seleccionar</div>
         <button class="modal-close" onclick="cerrarSelector()">✕</button>
       </div>
+      <div class="selector-tipo-filtro" id="selector-tipo-filtro" style="display:none"></div>
       <div class="selector-search">
-        <input type="text" id="selector-search-input" placeholder="Buscar..." oninput="filtrarSelector()" />
+        <input type="text" id="selector-search-input" placeholder="Buscar..." oninput="window.filtrarSelector()" />
       </div>
+      <div id="selector-loading" style="display:none;padding:20px;text-align:center;color:var(--muted);font-size:13px">Cargando datos...</div>
       <div class="selector-list" id="selector-list"></div>
     </div>
   </div>
@@ -763,7 +849,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-    import { MOVIMIENTOS, OBJETOS, TIPOS } from './datos.js';
+    import { MOVIMIENTOS, OBJETOS, TIPO_IDS, TIPO_COLORES } from './datos.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyDbe70TRHespj7KW60VpOroh6_-Kqp9oXg",
@@ -855,39 +941,27 @@
       grid.innerHTML = html;
     }
 
-    function getTipoColor(tipo) {
-      const COLORES = {
-        normal:'#A8A878', fire:'#F08030', water:'#6890F0', electric:'#F8D030',
-        grass:'#78C850', ice:'#98D8D8', fighting:'#C03028', poison:'#A040A0',
-        ground:'#E0C068', flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
-        rock:'#B8A038', ghost:'#705898', dragon:'#7038F8', dark:'#705848',
-        steel:'#B8B8D0', fairy:'#EE99AC'
-      };
-      return COLORES[tipo] || '#6b7280';
-    }
-
-    function getMovTipo(nombre) {
-      const mov = MOVIMIENTOS.find(m => m.nombre === nombre);
-      return mov ? mov.tipo : null;
-    }
-
     function pokemonCard(p, i) {
       const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.pokedex || 0}.png`;
-      const movs = [p.mov1, p.mov2, p.mov3, p.mov4].filter(Boolean);
-
-      // Color del tipo del pokemon (lo sacamos de la API cuando cargamos el sprite)
-      const tipoColor = p.tipoColor || '#2a2f4a';
-      const tipoColor2 = p.tipoColor2 || tipoColor;
-
-      const objetoSprite = p.objetoSprite
-        ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.objetoSprite}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />`
-        : '';
+      const movs = [
+        { nombre: p.mov1, tipo: p.mov1tipo },
+        { nombre: p.mov2, tipo: p.mov2tipo },
+        { nombre: p.mov3, tipo: p.mov3tipo },
+        { nombre: p.mov4, tipo: p.mov4tipo },
+      ].filter(m => m.nombre);
 
       const movsHtml = movs.map(m => {
-        const tipo = getMovTipo(m);
-        const color = tipo ? getTipoColor(tipo) : '#3a4060';
-        return `<span class="mov-tag" style="background:${color}22;border-color:${color}55;color:${color}">${m}</span>`;
+        const color = m.tipo ? (TIPO_COLORES[m.tipo] || '#3a4060') : '#3a4060';
+        const tid = m.tipo ? (TIPO_IDS[m.tipo] || 1) : null;
+        const icon = tid ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tid}.png" style="height:11px;vertical-align:middle;margin-right:3px;image-rendering:pixelated" onerror="this.style.display='none'" />` : '';
+        return `<span class="mov-tag" style="background:${color}22;border-color:${color}55;color:${color}">${icon}${m.nombre}</span>`;
       }).join('');
+
+      const tipoColor = p.tipoColor || '#2a2f4a';
+      const tipoColor2 = p.tipoColor2 || tipoColor;
+      const objetoSprite = p.objetoSprite
+        ? `<img src="${p.objetoSprite}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />`
+        : '';
 
       return `<div class="pokemon-card ${p.muerto ? 'dead' : ''}" style="--tipo1:${tipoColor};--tipo2:${tipoColor2}">
         <div class="poke-card-top">
@@ -951,17 +1025,28 @@
         document.getElementById('input-ruta').value = p.ruta || '';
         [1,2,3,4].forEach(i => {
           const val = p[`mov${i}`] || '';
+          const tipo = p[`mov${i}tipo`] || '';
           document.getElementById(`mov${i}`).value = val;
-          document.getElementById(`mov${i}-display`).textContent = val || `— Movimiento ${i} —`;
+          document.getElementById(`mov${i}-tipo`).value = tipo;
+          const tid = tipo ? (TIPO_IDS[tipo] || null) : null;
+          document.getElementById(`mov${i}-display`).innerHTML = val
+            ? `${tid ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tid}.png" style="height:12px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />` : ''}${val}`
+            : `— Movimiento ${i} —`;
         });
+        document.getElementById('input-objeto-sprite').value = p.objetoSprite || '';
+        document.getElementById('objeto-display').innerHTML = p.objeto
+          ? `${p.objetoSprite ? `<img src="${p.objetoSprite}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle" />` : ''} ${p.objeto}`
+          : '— Sin objeto —';
         if (p.pokedex) cargarSprite();
       } else {
         ['input-pokedex','input-apodo','input-nivel','input-ruta'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('input-naturaleza').value = '';
         document.getElementById('input-objeto').value = '';
+        document.getElementById('input-objeto-sprite').value = '';
         document.getElementById('objeto-display').textContent = '— Sin objeto —';
         [1,2,3,4].forEach(i => {
           document.getElementById(`mov${i}`).value = '';
+          document.getElementById(`mov${i}-tipo`).value = '';
           document.getElementById(`mov${i}-display`).textContent = `— Movimiento ${i} —`;
         });
         document.getElementById('modal-preview').innerHTML = '<div style="color:var(--muted);font-size:13px;width:100%;text-align:center">Introduce el número de Pokédex para ver el sprite</div>';
@@ -1033,12 +1118,16 @@
         nivel,
         naturaleza: document.getElementById('input-naturaleza').value,
         objeto: objetoNombre,
-        objetoSprite: objetoData ? objetoData.sprite : '',
+        objetoSprite: document.getElementById('input-objeto-sprite').value || '',
         ruta: document.getElementById('input-ruta').value.trim(),
         mov1: document.getElementById('mov1').value,
+        mov1tipo: document.getElementById('mov1-tipo').value,
         mov2: document.getElementById('mov2').value,
+        mov2tipo: document.getElementById('mov2-tipo').value,
         mov3: document.getElementById('mov3').value,
+        mov3tipo: document.getElementById('mov3-tipo').value,
         mov4: document.getElementById('mov4').value,
+        mov4tipo: document.getElementById('mov4-tipo').value,
         tipoColor: window._tipoColor || '#2a2f4a',
         tipoColor2: window._tipoColor2 || '#2a2f4a',
         muerto: false
@@ -1101,73 +1190,296 @@
       setTimeout(() => t.style.display = 'none', 2500);
     }
 
-    // SELECTOR MOVIMIENTOS Y OBJETOS
-    let selectorModo = null; // 'mov' o 'objeto'
+    // SELECTOR MOVIMIENTOS Y OBJETOS — datos locales, instantáneo
+    let selectorModo = null;
     let selectorMovIdx = null;
-    let selectorDatos = [];
+    let tipoFiltroActual = null;
+
+    function tipoSprite(tipoId) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tipoId}.png`;
+    }
 
     window.abrirSelectorMov = (idx) => {
       selectorModo = 'mov';
       selectorMovIdx = idx;
-      selectorDatos = MOVIMIENTOS;
+      tipoFiltroActual = null;
       document.getElementById('selector-title').textContent = `Movimiento ${idx}`;
       document.getElementById('selector-search-input').value = '';
-      renderSelector(MOVIMIENTOS);
+      document.getElementById('selector-tipo-filtro').style.display = 'flex';
+      document.getElementById('selector-loading').style.display = 'none';
       document.getElementById('selector-overlay').style.display = 'flex';
+      renderTipoFiltro();
+      renderSelectorMovimientos();
     };
 
-    window.abrirSelectorObjeto = () => {
+    window.abrirSelectorObjeto = async () => {
       selectorModo = 'objeto';
-      selectorDatos = OBJETOS;
+      tipoFiltroActual = null;
       document.getElementById('selector-title').textContent = 'Objeto equipado';
       document.getElementById('selector-search-input').value = '';
-      renderSelector(OBJETOS);
+      document.getElementById('selector-tipo-filtro').style.display = 'none';
+      document.getElementById('selector-loading').style.display = 'none';
       document.getElementById('selector-overlay').style.display = 'flex';
+      renderSelectorObjetos();
+    };
+
+    function renderTipoFiltro() {
+      const wrap = document.getElementById('selector-tipo-filtro');
+      wrap.innerHTML = `<div class="tipo-filtro-item ${tipoFiltroActual === null ? 'activo' : ''}" onclick="filtrarPorTipo(null)">Todos</div>` +
+        Object.entries(TIPO_IDS).map(([tipo, id]) =>
+          `<div class="tipo-filtro-item ${tipoFiltroActual === tipo ? 'activo' : ''}" onclick="filtrarPorTipo('${tipo}')" title="${tipo}">
+            <img src="${tipoSprite(id)}" onerror="this.style.display='none'" />
+          </div>`
+        ).join('');
+    }
+
+    window.filtrarPorTipo = (tipo) => {
+      tipoFiltroActual = tipo;
+      renderTipoFiltro();
+      renderSelectorMovimientos();
     };
 
     window.filtrarSelector = () => {
-      const q = document.getElementById('selector-search-input').value.toLowerCase();
-      const filtrados = selectorDatos.filter(d => d.nombre.toLowerCase().includes(q));
-      renderSelector(filtrados);
+      if (selectorModo === 'objeto') renderSelectorObjetos();
+      else renderSelectorMovimientos();
     };
 
-    function renderSelector(datos) {
+    function renderSelectorMovimientos() {
+      const q = document.getElementById('selector-search-input').value.toLowerCase();
+      const valorActual = document.getElementById(`mov${selectorMovIdx}`).value;
+      let datos = MOVIMIENTOS;
+      if (tipoFiltroActual) datos = datos.filter(m => m.tipo === tipoFiltroActual);
+      if (q) datos = datos.filter(m => m.nombre.toLowerCase().includes(q));
       const list = document.getElementById('selector-list');
-      const esObjeto = selectorModo === 'objeto';
-      const valorActual = esObjeto
-        ? document.getElementById('input-objeto').value
-        : document.getElementById(`mov${selectorMovIdx}`).value;
-
-      let html = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>`;
-
-      html += datos.map(d => {
-        const sel = valorActual === d.nombre ? 'selected' : '';
-        if (esObjeto) {
-          const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${d.sprite}`;
-          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g, "\\'")}')">
-            <img class="item-sprite" src="${sprite}" onerror="this.style.display='none'" />
+      if (!datos.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">No hay resultados.</div>'; return; }
+      list.innerHTML = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>` +
+        datos.map(d => {
+          const sel = valorActual === d.nombre ? 'selected' : '';
+          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','${d.tipo}',${d.tipoId})">
+            <img class="tipo-badge" src="${tipoSprite(d.tipoId)}" onerror="this.style.display='none'" />
             ${d.nombre}
           </div>`;
-        } else {
-          const tipo = TIPOS[d.tipo] || { id: 1 };
-          const tipoSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tipo.id}.png`;
-          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g, "\\'")}')">
-            <img class="tipo-badge" src="${tipoSprite}" onerror="this.style.display='none'" />
-            ${d.nombre}
-          </div>`;
-        }
-      }).join('');
-
-      list.innerHTML = html;
+        }).join('');
     }
 
-    window.seleccionarItem = (valor) => {
+    function renderSelectorObjetos() {
+      const q = document.getElementById('selector-search-input').value.toLowerCase();
+      const valorActual = document.getElementById('input-objeto').value;
+      let datos = OBJETOS;
+      if (q) datos = datos.filter(o => o.nombre.toLowerCase().includes(q));
+      const list = document.getElementById('selector-list');
+      if (!datos.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">No hay resultados.</div>'; return; }
+      list.innerHTML = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>` +
+        datos.map(d => {
+          const sel = valorActual === d.nombre ? 'selected' : '';
+          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','',${JSON.stringify(d.sprite)})">
+            ${d.sprite ? `<img class="item-sprite" src="${d.sprite}" onerror="this.style.display='none'" />` : ''}
+            ${d.nombre}
+          </div>`;
+        }).join('');
+    }
+
+    window.seleccionarItem = (valor, tipo, tipoIdOSprite) => {
+      if (selectorModo === 'objeto') {
+        const spriteUrl = typeof tipoIdOSprite === 'string' ? tipoIdOSprite : '';
+        document.getElementById('input-objeto').value = valor;
+        document.getElementById('input-objeto-sprite').value = spriteUrl;
+        document.getElementById('objeto-display').innerHTML = valor
+          ? `${spriteUrl ? `<img src="${spriteUrl}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle" />` : ''} ${valor}`
+          : '— Sin objeto —';
+      } else {
+        const tid = typeof tipoIdOSprite === 'number' ? tipoIdOSprite : null;
+        document.getElementById(`mov${selectorMovIdx}`).value = valor;
+        document.getElementById(`mov${selectorMovIdx}-tipo`).value = tipo || '';
+        document.getElementById(`mov${selectorMovIdx}-display`).innerHTML = valor
+          ? `${tid ? `<img src="${tipoSprite(tid)}" style="height:12px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />` : ''}${valor}`
+          : `— Movimiento ${selectorMovIdx} —`;
+      }
+      cerrarSelector();
+    };
+
+    window.cerrarSelector = () => {
+      document.getElementById('selector-overlay').style.display = 'none';
+    };
+
+    document.getElementById('selector-overlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('selector-overlay')) cerrarSelector();
+    });
+
+    // Cerrar modal al clicar fuera
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+    });
+  </script>
+    let selectorMovIdx = null;
+    let todosMovimientos = []; // { nombre, tipo, tipoId }
+    let todosObjetos = [];     // { nombre, sprite }
+    let tipoFiltroActual = null;
+
+    const TIPO_IDS = {
+      normal:1, fighting:2, flying:3, poison:4, ground:5, rock:6,
+      bug:7, ghost:8, steel:9, fire:10, water:11, grass:12,
+      electric:13, psychic:14, ice:15, dragon:16, dark:17, fairy:18
+    };
+
+    const TIPO_COLORES = {
+      normal:'#A8A878', fighting:'#C03028', flying:'#A890F0', poison:'#A040A0',
+      ground:'#E0C068', rock:'#B8A038', bug:'#A8B820', ghost:'#705898',
+      steel:'#B8B8D0', fire:'#F08030', water:'#6890F0', grass:'#78C850',
+      electric:'#F8D030', psychic:'#F85888', ice:'#98D8D8', dragon:'#7038F8',
+      dark:'#705848', fairy:'#EE99AC'
+    };
+
+    function tipoSprite(tipoId) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/${tipoId}.png`;
+    }
+
+    async function cargarMovimientos() {
+      if (todosMovimientos.length) return;
+      document.getElementById('selector-loading').style.display = 'block';
+      try {
+        // Carga lista de todos los movimientos
+        const res = await fetch('https://pokeapi.co/api/v2/move?limit=950&offset=0');
+        const data = await res.json();
+        // Carga detalles en paralelo por lotes de 50
+        const nombres = data.results;
+        const lotes = [];
+        for (let i = 0; i < nombres.length; i += 50) lotes.push(nombres.slice(i, i + 50));
+        for (const lote of lotes) {
+          const detalles = await Promise.all(lote.map(m => fetch(m.url).then(r => r.json())));
+          for (const d of detalles) {
+            const nombreEs = d.names?.find(n => n.language.name === 'es')?.name || d.name;
+            const tipo = d.type?.name || 'normal';
+            todosMovimientos.push({ nombre: nombreEs, tipo, tipoId: TIPO_IDS[tipo] || 1 });
+          }
+        }
+        todosMovimientos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      } catch(e) {
+        console.error('Error cargando movimientos:', e);
+      }
+      document.getElementById('selector-loading').style.display = 'none';
+    }
+
+    async function cargarObjetos() {
+      if (todosObjetos.length) return;
+      document.getElementById('selector-loading').style.display = 'block';
+      try {
+        const res = await fetch('https://pokeapi.co/api/v2/item?limit=2000&offset=0');
+        const data = await res.json();
+        const lotes = [];
+        for (let i = 0; i < data.results.length; i += 50) lotes.push(data.results.slice(i, i + 50));
+        for (const lote of lotes) {
+          const detalles = await Promise.all(lote.map(m => fetch(m.url).then(r => r.json())));
+          for (const d of detalles) {
+            const nombreEs = d.names?.find(n => n.language.name === 'es')?.name || d.name;
+            const sprite = d.sprites?.default || '';
+            if (sprite) todosObjetos.push({ nombre: nombreEs, sprite });
+          }
+        }
+        todosObjetos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      } catch(e) {
+        console.error('Error cargando objetos:', e);
+      }
+      document.getElementById('selector-loading').style.display = 'none';
+    }
+
+    window.abrirSelectorMov = async (idx) => {
+      selectorModo = 'mov';
+      selectorMovIdx = idx;
+      tipoFiltroActual = null;
+      document.getElementById('selector-title').textContent = `Movimiento ${idx}`;
+      document.getElementById('selector-search-input').value = '';
+      document.getElementById('selector-tipo-filtro').style.display = 'flex';
+      document.getElementById('selector-overlay').style.display = 'flex';
+      await cargarMovimientos();
+      renderTipoFiltro();
+      renderSelectorMovimientos();
+    };
+
+    window.abrirSelectorObjeto = async () => {
+      selectorModo = 'objeto';
+      tipoFiltroActual = null;
+      document.getElementById('selector-title').textContent = 'Objeto equipado';
+      document.getElementById('selector-search-input').value = '';
+      document.getElementById('selector-tipo-filtro').style.display = 'none';
+      document.getElementById('selector-overlay').style.display = 'flex';
+      await cargarObjetos();
+      renderSelectorObjetos();
+    };
+
+    function renderTipoFiltro() {
+      const wrap = document.getElementById('selector-tipo-filtro');
+      const tipos = Object.entries(TIPO_IDS);
+      wrap.innerHTML = `<div class="tipo-filtro-item ${tipoFiltroActual === null ? 'activo' : ''}" onclick="filtrarPorTipo(null)">Todos</div>` +
+        tipos.map(([tipo, id]) => {
+          const activo = tipoFiltroActual === tipo ? 'activo' : '';
+          return `<div class="tipo-filtro-item ${activo}" onclick="filtrarPorTipo('${tipo}')" title="${tipo}" style="--tcolor:${TIPO_COLORES[tipo]}">
+            <img src="${tipoSprite(id)}" onerror="this.style.display='none'" />
+          </div>`;
+        }).join('');
+    }
+
+    window.filtrarPorTipo = (tipo) => {
+      tipoFiltroActual = tipo;
+      renderTipoFiltro();
+      renderSelectorMovimientos();
+    };
+
+    window.filtrarSelector = () => {
+      if (selectorModo === 'objeto') renderSelectorObjetos();
+      else renderSelectorMovimientos();
+    };
+
+    function renderSelectorMovimientos() {
+      const q = document.getElementById('selector-search-input').value.toLowerCase();
+      const valorActual = document.getElementById(`mov${selectorMovIdx}`).value;
+      let datos = todosMovimientos;
+      if (tipoFiltroActual) datos = datos.filter(m => m.tipo === tipoFiltroActual);
+      if (q) datos = datos.filter(m => m.nombre.toLowerCase().includes(q));
+      const list = document.getElementById('selector-list');
+      if (!datos.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">No hay resultados.</div>'; return; }
+      list.innerHTML = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>` +
+        datos.map(d => {
+          const sel = valorActual === d.nombre ? 'selected' : '';
+          const color = TIPO_COLORES[d.tipo] || '#6b7280';
+          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','${d.tipo}')">
+            <img class="tipo-badge" src="${tipoSprite(d.tipoId)}" onerror="this.style.display='none'" />
+            ${d.nombre}
+          </div>`;
+        }).join('');
+    }
+
+    function renderSelectorObjetos() {
+      const q = document.getElementById('selector-search-input').value.toLowerCase();
+      const valorActual = document.getElementById('input-objeto').value;
+      let datos = todosObjetos;
+      if (q) datos = datos.filter(o => o.nombre.toLowerCase().includes(q));
+      const list = document.getElementById('selector-list');
+      if (!datos.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px">No hay resultados.</div>'; return; }
+      list.innerHTML = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>` +
+        datos.map(d => {
+          const sel = valorActual === d.nombre ? 'selected' : '';
+          return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','',${JSON.stringify(d.sprite)})">
+            ${d.sprite ? `<img class="item-sprite" src="${d.sprite}" onerror="this.style.display='none'" />` : ''}
+            ${d.nombre}
+          </div>`;
+        }).join('');
+    }
+
+    window.seleccionarItem = (valor, tipo, spriteUrl) => {
       if (selectorModo === 'objeto') {
         document.getElementById('input-objeto').value = valor;
-        document.getElementById('objeto-display').textContent = valor || '— Sin objeto —';
+        document.getElementById('input-objeto-sprite').value = spriteUrl || '';
+        document.getElementById('objeto-display').innerHTML = valor
+          ? `${spriteUrl ? `<img src="${spriteUrl}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle" />` : ''} ${valor}`
+          : '— Sin objeto —';
       } else {
         document.getElementById(`mov${selectorMovIdx}`).value = valor;
-        document.getElementById(`mov${selectorMovIdx}-display`).textContent = valor || `— Movimiento ${selectorMovIdx} —`;
+        document.getElementById(`mov${selectorMovIdx}-tipo`).value = tipo || '';
+        const color = tipo ? (TIPO_COLORES[tipo] || '#3a4060') : '';
+        document.getElementById(`mov${selectorMovIdx}-display`).innerHTML = valor
+          ? `<img src="${tipoSprite(TIPO_IDS[tipo])}" style="height:12px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />${valor}`
+          : `— Movimiento ${selectorMovIdx} —`;
       }
       cerrarSelector();
     };
