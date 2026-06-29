@@ -580,6 +580,7 @@
       const params = new URLSearchParams(window.location.search);
       perfilUID = params.get('uid') || user.uid;
       esPropio = perfilUID === user.uid;
+      console.log("perfilUID:", perfilUID, "userUID:", user.uid, "esPropio:", esPropio);
 
       if (!esPropio) {
         document.getElementById('readonly-banner').style.display = 'block';
