@@ -278,6 +278,7 @@
 
         window.location.href = 'lobby.html';
       } catch (e) {
+        console.log("ERROR REGISTRO:", e.code, e.message);
         if (e.code === 'auth/email-already-in-use') showError('Ese email ya está registrado.');
         else showError('Error al crear la cuenta. Inténtalo de nuevo.');
       }
