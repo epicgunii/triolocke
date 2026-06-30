@@ -574,7 +574,10 @@
       if (!c.j || (c.val.startsWith('0'))) {
         return `<div class="top-card"><div class="top-label">${c.label}</div><div class="top-empty">Sin datos todavía</div></div>`;
       }
-      const avatar = c.j.foto ? `<img src="${c.j.foto}" />` : c.j.nombre[0].toUpperCase();
+      const avatarUrl = c.j.avatarSprite
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${c.j.avatarSprite}.png`
+        : c.j.foto;
+      const avatar = avatarUrl ? `<img src="${avatarUrl}" style="${c.j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:2px' : ''}" />` : c.j.nombre[0].toUpperCase();
       return `<div class="top-card">
         <div class="top-label">${c.label}</div>
         <div class="top-winner">
@@ -703,8 +706,11 @@
       const equipo = j.equipo || [];
       const medallasJugador = j.medallas || [];
 
-      const avatarHtml = j.foto
-        ? `<img class="player-avatar-img" src="${j.foto}" alt="${j.nombre}" />`
+      const avatarUrl = j.avatarSprite
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${j.avatarSprite}.png`
+        : j.foto;
+      const avatarHtml = avatarUrl
+        ? `<img class="player-avatar-img" src="${avatarUrl}" alt="${j.nombre}" style="${j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:3px;image-rendering:pixelated' : ''}" />`
         : `<div class="player-avatar">${j.nombre[0].toUpperCase()}</div>`;
 
       const medallasHtml = `<div class="player-medallas">` + MEDALLAS.map((m, i) => {
