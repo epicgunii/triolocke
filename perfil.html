@@ -1081,6 +1081,7 @@
     };
 
     const caja = [...(perfilData.caja || [])];
+    const esNuevo = editandoCajaIndex < 0;
     if (editandoCajaIndex >= 0) {
       caja[editandoCajaIndex] = pokemon;
     } else {
@@ -1088,6 +1089,15 @@
     }
 
     await updateDoc(doc(db, 'jugadores', currentUser.uid), { caja });
+
+    if (esNuevo) {
+      await addDoc(collection(db, 'feed'), {
+        icono: '🎉',
+        pokedex: pokedex,
+        texto: `<strong>${perfilData.nombre}</strong> capturó a <strong>${apodo}</strong> (#${pokedex}) — ${pokemon.ruta || 'ruta desconocida'}`,
+        fecha: new Date().toISOString()
+      });
+    }
     cerrarModalCaja();
     mostrarToast();
   };
@@ -1237,7 +1247,8 @@
     if (editandoIndex === -1) {
       await addDoc(collection(db, 'feed'), {
         icono: '🎉',
-        texto: `<strong>${perfilData.nombre}</strong> añadió a <strong>${apodo}</strong> (#${pokedex}) a su equipo`,
+        pokedex: pokedex,
+        texto: `<strong>${perfilData.nombre}</strong> capturó a <strong>${apodo}</strong> (#${pokedex}) — ${pokemon.ruta || 'ruta desconocida'}`,
         fecha: new Date().toISOString()
       });
     }
@@ -1261,6 +1272,7 @@
 
     await addDoc(collection(db, 'feed'), {
       icono: '💀',
+      pokedex: p.pokedex,
       texto: `<strong>${perfilData.nombre}</strong> perdió a <strong>${p.apodo || p.nombre}</strong>. Le quedan ${nuevasVidas} vidas.${eliminado ? ' ¡Ha sido eliminado del TrioLocke!' : ''}`,
       fecha: new Date().toISOString()
     });
