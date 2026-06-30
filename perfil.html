@@ -674,19 +674,19 @@
   }
   .avatar-option {
     aspect-ratio: 1;
-    background: var(--surface2);
+    border-radius: 50%;
     border: 2px solid var(--border);
-    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
-    padding: 4px;
+    padding: 6px;
+    overflow: hidden;
   }
   .avatar-option img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-  .avatar-option:hover { border-color: var(--accent2); }
-  .avatar-option.selected { border-color: var(--accent); background: rgba(155,188,15,0.1); }
+  .avatar-option:hover { border-color: var(--accent2); transform: scale(1.05); }
+  .avatar-option.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 
   @media (max-width: 600px) {
     header { padding: 12px 16px; }
@@ -928,7 +928,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
   import { getFirestore, doc, onSnapshot, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-  import { MOVIMIENTOS, OBJETOS, TIPO_IDS, TIPO_COLORES, MEDALLAS, TIPOS_CAPTURA } from './datos.js';
+  import { MOVIMIENTOS, OBJETOS, TIPO_IDS, TIPO_COLORES, MEDALLAS, TIPOS_CAPTURA, AVATARES_DISPONIBLES, avatarBg as avatarBgShared } from './datos.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyDbe70TRHespj7KW60VpOroh6_-Kqp9oXg",
@@ -942,6 +942,8 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+  function avatarBg(id) { return avatarBgShared(id, TIPO_COLORES); }
 
   let currentUser = null;
   let perfilUID = null;
@@ -984,10 +986,11 @@
     const avatarSprite = d.avatarSprite
       ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${d.avatarSprite}.png`
       : (d.foto || null);
+    const avatarBgStyle = d.avatarSprite ? `background:${avatarBg(parseInt(d.avatarSprite))};` : '';
 
     document.getElementById('profile-header').innerHTML = `
       ${avatarSprite
-        ? `<img class="profile-avatar" src="${avatarSprite}" alt="${d.nombre}" style="${d.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:4px;image-rendering:pixelated' : ''}" />`
+        ? `<img class="profile-avatar" src="${avatarSprite}" alt="${d.nombre}" style="${avatarBgStyle}object-fit:contain;padding:5px;image-rendering:pixelated" />`
         : `<div class="profile-avatar-placeholder">${d.nombre[0].toUpperCase()}</div>`
       }
       <div class="profile-info">
@@ -1508,40 +1511,14 @@
   };
 
   // ===== EDITAR PERFIL (nombre + avatar) =====
-  const AVATARES_DISPONIBLES = [
-    1,4,7,                      // Bulbasaur, Charmander, Squirtle
-    152,155,158,                // Chikorita, Cyndaquil, Totodile
-    252,255,258,                // Treecko, Torchic, Mudkip
-    387,390,393,                // Turtwig, Chimchar, Piplup
-    495,498,501,                // Snivy, Tepig, Oshawott
-    650,653,656,                // Chespin, Fennekin, Froakie
-    722,725,728,                // Rowlet, Litten, Popplio
-    810,813,816,                // Grookey, Scorbunny, Sobble
-    906,909,912,                // Sprigatito, Fuecoco, Quaxly
-    25,                         // Pikachu
-    133,                        // Eevee
-    143,                        // Snorlax
-    150,151,                    // Mewtwo, Mew
-    149,                        // Dragonite
-    448,                        // Lucario
-    282,                        // Gardevoir
-    94,                         // Gengar
-    6,9,3,                      // Charizard, Blastoise, Venusaur
-    257,260,254,                // Blaziken, Swampert, Sceptile
-    445,                        // Garchomp
-    123,212,                    // Scyther, Scizor
-  ];
-
   window.abrirEditarPerfil = () => {
     document.getElementById('editar-nombre').value = perfilData.nombre || '';
     const grid = document.getElementById('avatar-grid');
     grid.innerHTML = AVATARES_DISPONIBLES.map(id => {
       const sel = perfilData.avatarSprite === String(id) ? 'selected' : '';
-      const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${id}.png`;
-      const fallback1 = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons/${id}.png`;
-      const fallback2 = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-      return `<div class="avatar-option ${sel}" data-id="${id}" onclick="seleccionarAvatar(${id})">
-        <img src="${sprite}" onerror="if(this.src!=='${fallback1}'){this.src='${fallback1}'}else{this.onerror=null;this.src='${fallback2}'}" />
+      const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+      return `<div class="avatar-option ${sel}" data-id="${id}" onclick="seleccionarAvatar(${id})" style="background:${avatarBg(id)}">
+        <img src="${sprite}" onerror="this.style.display='none'" />
       </div>`;
     }).join('');
     document.getElementById('editar-perfil-overlay').style.display = 'flex';

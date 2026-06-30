@@ -617,3 +617,52 @@ export const TIPOS_CAPTURA = [
   'Hierba alta', 'Pesca', 'Surf', 'Cueva', 'Regalo NPC', 'Intercambio NPC',
   'Huevo', 'Fósil', 'Encuentro especial', 'Roca rota (Excavar)', 'Otro'
 ];
+
+// Avatares de perfil disponibles y sus tipos (para fondo degradado)
+export const AVATARES_DISPONIBLES = [
+  1,4,7,
+  152,155,158,
+  252,255,258,
+  387,390,393,
+  495,498,501,
+  650,653,656,
+  722,725,728,
+  810,813,816,
+  906,909,912,
+  25, 133, 143, 150, 151, 149, 448, 282, 94,
+  6,9,3,
+  257,260,254,
+  445,
+  123,212
+];
+
+export const AVATAR_TIPOS = {
+  1:['grass','poison'], 4:['fire'], 7:['water'],
+  152:['grass'], 155:['fire'], 158:['water'],
+  252:['grass'], 255:['fire'], 258:['water'],
+  387:['grass'], 390:['fire'], 393:['water'],
+  495:['grass'], 498:['fire'], 501:['water'],
+  650:['grass'], 653:['fire'], 656:['water'],
+  722:['grass','flying'], 725:['fire'], 728:['water'],
+  810:['grass'], 813:['fire'], 816:['water'],
+  906:['grass'], 909:['fire'], 912:['water'],
+  25:['electric'],
+  133:['normal'],
+  143:['normal'],
+  150:['psychic'], 151:['psychic'],
+  149:['dragon','flying'],
+  448:['fighting','steel'],
+  282:['psychic','fairy'],
+  94:['ghost','poison'],
+  6:['fire','flying'], 9:['water'], 3:['grass','poison'],
+  257:['fire','fighting'], 260:['water','ground'], 254:['grass'],
+  445:['dragon','ground'],
+  123:['bug','flying'], 212:['bug','steel'],
+};
+
+export function avatarBg(id, TIPO_COLORES) {
+  const tipos = AVATAR_TIPOS[id] || ['normal'];
+  const c1 = TIPO_COLORES[tipos[0]] || '#5b6373';
+  const c2 = TIPO_COLORES[tipos[1] || tipos[0]] || c1;
+  return `radial-gradient(circle at 35% 30%, ${c1}, ${c2} 75%)`;
+}

@@ -449,7 +449,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
   import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-  import { MEDALLAS } from './datos.js';
+  import { MEDALLAS, TIPO_COLORES, avatarBg } from './datos.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyDbe70TRHespj7KW60VpOroh6_-Kqp9oXg",
@@ -575,10 +575,12 @@
         return `<div class="top-card"><div class="top-label">${c.label}</div><div class="top-empty">Sin datos todavía</div></div>`;
       }
       const avatarUrl = c.j.avatarSprite
-        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${c.j.avatarSprite}.png`
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${c.j.avatarSprite}.png`
         : c.j.foto;
-      const avatarFallback = c.j.avatarSprite ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${c.j.avatarSprite}.png` : '';
-      const avatar = avatarUrl ? `<img src="${avatarUrl}" style="${c.j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:2px' : ''}" ${avatarFallback ? `onerror="this.onerror=null;this.src='${avatarFallback}'"` : ''} />` : c.j.nombre[0].toUpperCase();
+      const avatarStyle = c.j.avatarSprite
+        ? `object-fit:contain;padding:2px;background:${avatarBg(parseInt(c.j.avatarSprite), TIPO_COLORES)}`
+        : '';
+      const avatar = avatarUrl ? `<img src="${avatarUrl}" style="${avatarStyle}" />` : c.j.nombre[0].toUpperCase();
       return `<div class="top-card">
         <div class="top-label">${c.label}</div>
         <div class="top-winner">
@@ -708,11 +710,13 @@
       const medallasJugador = j.medallas || [];
 
       const avatarUrl = j.avatarSprite
-        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${j.avatarSprite}.png`
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${j.avatarSprite}.png`
         : j.foto;
-      const avatarFallback = j.avatarSprite ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${j.avatarSprite}.png` : '';
+      const avatarStyle = j.avatarSprite
+        ? `object-fit:contain;padding:3px;image-rendering:pixelated;background:${avatarBg(parseInt(j.avatarSprite), TIPO_COLORES)}`
+        : '';
       const avatarHtml = avatarUrl
-        ? `<img class="player-avatar-img" src="${avatarUrl}" alt="${j.nombre}" style="${j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:3px;image-rendering:pixelated' : ''}" ${avatarFallback ? `onerror="this.onerror=null;this.src='${avatarFallback}'"` : ''} />`
+        ? `<img class="player-avatar-img" src="${avatarUrl}" alt="${j.nombre}" style="${avatarStyle}" />`
         : `<div class="player-avatar">${j.nombre[0].toUpperCase()}</div>`;
 
       const medallasHtml = `<div class="player-medallas">` + MEDALLAS.map((m, i) => {
