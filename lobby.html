@@ -575,7 +575,7 @@
         return `<div class="top-card"><div class="top-label">${c.label}</div><div class="top-empty">Sin datos todavía</div></div>`;
       }
       const avatarUrl = c.j.avatarSprite
-        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${c.j.avatarSprite}.png`
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${c.j.avatarSprite}.png`
         : c.j.foto;
       const avatar = avatarUrl ? `<img src="${avatarUrl}" style="${c.j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:2px' : ''}" />` : c.j.nombre[0].toUpperCase();
       return `<div class="top-card">
@@ -707,7 +707,7 @@
       const medallasJugador = j.medallas || [];
 
       const avatarUrl = j.avatarSprite
-        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${j.avatarSprite}.png`
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${j.avatarSprite}.png`
         : j.foto;
       const avatarHtml = avatarUrl
         ? `<img class="player-avatar-img" src="${avatarUrl}" alt="${j.nombre}" style="${j.avatarSprite ? 'object-fit:contain;background:var(--surface2);padding:3px;image-rendering:pixelated' : ''}" />`

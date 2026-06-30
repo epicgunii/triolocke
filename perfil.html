@@ -1529,6 +1529,7 @@
     6,9,3,                      // Charizard, Blastoise, Venusaur
     257,260,254,                // Blaziken, Swampert, Sceptile
     445,                        // Garchomp
+    123,212,                    // Scyther, Scizor
   ];
 
   window.abrirEditarPerfil = () => {
@@ -1536,7 +1537,7 @@
     const grid = document.getElementById('avatar-grid');
     grid.innerHTML = AVATARES_DISPONIBLES.map(id => {
       const sel = perfilData.avatarSprite === String(id) ? 'selected' : '';
-      const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+      const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${id}.png`;
       return `<div class="avatar-option ${sel}" data-id="${id}" onclick="seleccionarAvatar(${id})">
         <img src="${sprite}" onerror="this.style.display='none'" />
       </div>`;
