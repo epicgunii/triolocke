@@ -279,6 +279,51 @@
   .slot-vacio .plus { font-size: 26px; }
 
   .cemetery-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+
+  .medallas-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .medalla-item {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .medalla-item:hover { transform: translateY(-2px); border-color: var(--accent2); }
+  .medalla-item svg { width: 28px; height: 28px; opacity: 0.35; filter: grayscale(1); transition: all 0.2s; }
+  .medalla-item.conseguida { border-color: var(--medalla-color, var(--accent2)); background: var(--surface2); box-shadow: 0 0 12px var(--medalla-color, var(--accent2))44; }
+  .medalla-item.conseguida svg { opacity: 1; filter: none; }
+  .medalla-item .medalla-tooltip {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .boxes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 700px) {
+    .boxes-grid { grid-template-columns: 1fr; }
+  }
+  .box-col .cemetery-grid { margin-bottom: 10px; }
   .dead-poke {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -602,12 +647,26 @@
 
     <div class="profile-header" id="profile-header"></div>
 
+    <div class="section-title">Medallas</div>
+    <div class="medallas-row" id="medallas-row"></div>
+
     <div class="section-title">Equipo activo</div>
     <div class="team-grid" id="team-grid"></div>
 
-    <div class="section-title">⚰️ Cementerio personal</div>
-    <div class="cemetery-grid" id="cemetery-grid">
-      <div class="cemetery-empty">Ninguna baja todavía.</div>
+    <div class="boxes-grid">
+      <div class="box-col">
+        <div class="section-title">📦 Caja 1</div>
+        <div class="cemetery-grid" id="box-grid">
+          <div class="cemetery-empty">Sin Pokémon en caja.</div>
+        </div>
+        <button class="btn-small" id="btn-add-box" style="display:none;margin-top:8px" onclick="abrirModalCaja(-1)">+ Añadir a la caja</button>
+      </div>
+      <div class="box-col">
+        <div class="section-title">⚰️ Cementerio personal</div>
+        <div class="cemetery-grid" id="cemetery-grid">
+          <div class="cemetery-empty">Ninguna baja todavía.</div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -718,11 +777,52 @@
   </div>
 </div>
 
+<!-- MODAL CAJA -->
+<div class="modal-overlay" id="caja-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="caja-modal-title">Añadir a la Caja</div>
+      <button class="modal-close" onclick="cerrarModalCaja()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-preview" id="caja-modal-preview">
+        <div style="color:var(--muted);font-size:13px;width:100%;text-align:center">Introduce el número de Pokédex</div>
+      </div>
+      <div class="form-group">
+        <label>Número de Pokédex</label>
+        <input type="number" id="caja-pokedex" min="1" max="1025" placeholder="Ej: 25 (Pikachu)" oninput="cargarSpriteCaja()" />
+      </div>
+      <div class="form-group">
+        <label>Apodo</label>
+        <input type="text" id="caja-apodo" placeholder="El nombre que le pusiste" />
+      </div>
+      <div class="form-group">
+        <label>Nivel</label>
+        <input type="number" id="caja-nivel" min="1" max="100" placeholder="1-100" />
+      </div>
+      <div class="form-group">
+        <label>Ruta de captura</label>
+        <input type="text" id="caja-ruta" placeholder="Ej: Ruta 1, Torre Añil..." />
+      </div>
+      <div class="form-group">
+        <label>Tipo de captura</label>
+        <select id="caja-tipocaptura">
+          <option value="">— Sin especificar —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-small" onclick="cerrarModalCaja()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarCaja()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
   import { getFirestore, doc, onSnapshot, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-  import { MOVIMIENTOS, OBJETOS, TIPO_IDS, TIPO_COLORES } from './datos.js';
+  import { MOVIMIENTOS, OBJETOS, TIPO_IDS, TIPO_COLORES, MEDALLAS, TIPOS_CAPTURA } from './datos.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyDbe70TRHespj7KW60VpOroh6_-Kqp9oXg",
@@ -752,6 +852,7 @@
     esPropio = perfilUID === user.uid;
 
     if (!esPropio) document.getElementById('readonly-banner').style.display = 'block';
+    if (esPropio) document.getElementById('btn-add-box').style.display = 'inline-block';
 
     document.getElementById('app-loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -760,8 +861,10 @@
       if (!snap.exists()) return;
       perfilData = snap.data();
       renderPerfil();
+      renderMedallas();
       renderEquipo();
       renderCementerio();
+      renderCaja();
     });
   });
 
@@ -841,6 +944,7 @@
       </div>
       ${esPropio ? `<div class="poke-card-footer">
         <button class="btn-small" onclick="abrirModal(${i})">Editar</button>
+        ${!p.muerto ? `<button class="btn-small" onclick="moverDeEquipoACaja(${i})">📦 Caja</button>` : ''}
         ${!p.muerto ? `<button class="btn-danger" onclick="marcarMuerto(${i})">☠️ Muerto</button>` : ''}
       </div>` : ''}
     </div>`;
@@ -861,6 +965,156 @@
       </div>`;
     }).join('');
   }
+
+  function renderMedallas() {
+    const obtenidas = perfilData.medallas || [];
+    const row = document.getElementById('medallas-row');
+    row.innerHTML = MEDALLAS.map((m, i) => {
+      const tiene = obtenidas.includes(i);
+      const clickable = esPropio ? `onclick="toggleMedalla(${i})"` : '';
+      return `<div class="medalla-item ${tiene ? 'conseguida' : ''}" style="--medalla-color:${m.color}" ${clickable} title="${m.nombre} (${m.gimnasio})">
+        <svg viewBox="0 0 24 24">${m.svg}</svg>
+      </div>`;
+    }).join('');
+  }
+
+  window.toggleMedalla = async (i) => {
+    if (!esPropio) return;
+    const obtenidas = [...(perfilData.medallas || [])];
+    const idx = obtenidas.indexOf(i);
+    let mensaje = '';
+    if (idx >= 0) {
+      obtenidas.splice(idx, 1);
+    } else {
+      obtenidas.push(i);
+      mensaje = `<strong>${perfilData.nombre}</strong> ha conseguido la medalla ${MEDALLAS[i].nombre}`;
+    }
+    await updateDoc(doc(db, 'jugadores', currentUser.uid), { medallas: obtenidas });
+    if (mensaje) {
+      await addDoc(collection(db, 'feed'), { icono: '🏅', texto: mensaje, fecha: new Date().toISOString() });
+    }
+  };
+
+  function renderCaja() {
+    const caja = perfilData.caja || [];
+    const grid = document.getElementById('box-grid');
+    if (!caja.length) { grid.innerHTML = '<div class="cemetery-empty">Sin Pokémon en caja.</div>'; return; }
+    grid.innerHTML = caja.map((p, i) => {
+      const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.pokedex || 0}.png`;
+      const accionesPropio = esPropio
+        ? `<div style="display:flex;gap:4px;margin-top:4px">
+            <button class="btn-small" style="font-size:9px;padding:3px 6px" onclick="editarCaja(${i})">Editar</button>
+            <button class="btn-small" style="font-size:9px;padding:3px 6px" onclick="moverACaja(${i}, false)">→ Equipo</button>
+          </div>`
+        : '';
+      return `<div class="dead-poke" style="filter:none;opacity:1;align-items:flex-start">
+        <img src="${sprite}" onerror="this.style.display='none'" />
+        <div>
+          <div class="dead-poke-name">${p.apodo || p.nombre || '???'}</div>
+          <div class="dead-poke-info">#${p.pokedex || '?'} · Nv.${p.nivel || '?'}</div>
+          <div class="dead-poke-info">${p.ruta || 'Ruta desconocida'} · ${p.tipoCaptura || 'Sin especificar'}</div>
+          ${accionesPropio}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let editandoCajaIndex = -1;
+
+  window.abrirModalCaja = (index) => {
+    if (!esPropio) return;
+    editandoCajaIndex = index;
+    document.getElementById('caja-modal-title').textContent = index === -1 ? 'Añadir a la Caja' : 'Editar Pokémon de caja';
+
+    if (index >= 0) {
+      const p = perfilData.caja[index];
+      document.getElementById('caja-pokedex').value = p.pokedex || '';
+      document.getElementById('caja-apodo').value = p.apodo || '';
+      document.getElementById('caja-nivel').value = p.nivel || '';
+      document.getElementById('caja-ruta').value = p.ruta || '';
+      document.getElementById('caja-tipocaptura').value = p.tipoCaptura || '';
+      if (p.pokedex) cargarSpriteCaja();
+    } else {
+      ['caja-pokedex','caja-apodo','caja-nivel','caja-ruta'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('caja-tipocaptura').value = '';
+      document.getElementById('caja-modal-preview').innerHTML = '<div style="color:var(--muted);font-size:13px;width:100%;text-align:center">Introduce el número de Pokédex</div>';
+    }
+    document.getElementById('caja-modal-overlay').style.display = 'flex';
+  };
+
+  window.editarCaja = (index) => {
+    window.abrirModalCaja(index);
+  };
+
+  window.cerrarModalCaja = () => { document.getElementById('caja-modal-overlay').style.display = 'none'; };
+
+  window.cargarSpriteCaja = async () => {
+    const num = document.getElementById('caja-pokedex').value;
+    if (!num || num < 1) return;
+    const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${num}.png`;
+    try {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${num}`);
+      const data = await res.json();
+      const nombre = data.name.charAt(0).toUpperCase() + data.name.slice(1);
+      window._cajaPokemonNombre = nombre;
+      document.getElementById('caja-modal-preview').innerHTML = `<img class="modal-sprite" src="${sprite}" /><div class="modal-poke-name">${nombre}</div>`;
+      if (!document.getElementById('caja-apodo').value) document.getElementById('caja-apodo').value = nombre;
+    } catch {
+      document.getElementById('caja-modal-preview').innerHTML = `<img class="modal-sprite" src="${sprite}" /><div style="color:var(--muted);font-size:13px">Pokémon #${num}</div>`;
+      window._cajaPokemonNombre = '';
+    }
+  };
+
+  window.guardarCaja = async () => {
+    const pokedex = parseInt(document.getElementById('caja-pokedex').value);
+    const apodo = document.getElementById('caja-apodo').value.trim();
+    const nivel = parseInt(document.getElementById('caja-nivel').value) || 0;
+    if (!pokedex || !apodo) { alert('Introduce al menos el número de Pokédex y el apodo.'); return; }
+
+    const pokemon = {
+      pokedex,
+      nombre: window._cajaPokemonNombre || '',
+      apodo,
+      nivel,
+      ruta: document.getElementById('caja-ruta').value.trim(),
+      tipoCaptura: document.getElementById('caja-tipocaptura').value
+    };
+
+    const caja = [...(perfilData.caja || [])];
+    if (editandoCajaIndex >= 0) {
+      caja[editandoCajaIndex] = pokemon;
+    } else {
+      caja.push(pokemon);
+    }
+
+    await updateDoc(doc(db, 'jugadores', currentUser.uid), { caja });
+    cerrarModalCaja();
+    mostrarToast();
+  };
+
+  window.moverACaja = async (index, aCaja) => {
+    // aCaja=false significa: mover de caja a equipo
+    const equipo = [...(perfilData.equipo || [])];
+    const caja = [...(perfilData.caja || [])];
+    if (!aCaja) {
+      if (equipo.length >= 6) { alert('Tu equipo ya tiene 6 Pokémon. Saca uno primero.'); return; }
+      const p = caja[index];
+      caja.splice(index, 1);
+      equipo.push(p);
+    }
+    await updateDoc(doc(db, 'jugadores', currentUser.uid), { equipo, caja });
+    mostrarToast('Movido al equipo');
+  };
+
+  window.moverDeEquipoACaja = async (index) => {
+    const equipo = [...(perfilData.equipo || [])];
+    const caja = [...(perfilData.caja || [])];
+    const p = equipo[index];
+    equipo.splice(index, 1);
+    caja.push(p);
+    await updateDoc(doc(db, 'jugadores', currentUser.uid), { equipo, caja });
+    mostrarToast('Movido a la caja');
+  };
 
   window.abrirModal = (index) => {
     if (!esPropio) return;
@@ -1135,6 +1389,14 @@
   document.getElementById('modal-overlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-overlay')) cerrarModal();
   });
+  document.getElementById('caja-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('caja-modal-overlay')) cerrarModalCaja();
+  });
+
+  // Poblar select de tipos de captura
+  document.getElementById('caja-tipocaptura').innerHTML =
+    '<option value="">— Sin especificar —</option>' +
+    TIPOS_CAPTURA.map(t => `<option>${t}</option>`).join('');
 </script>
 </body>
 </html>
