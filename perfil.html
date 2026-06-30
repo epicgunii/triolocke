@@ -1538,8 +1538,10 @@
     grid.innerHTML = AVATARES_DISPONIBLES.map(id => {
       const sel = perfilData.avatarSprite === String(id) ? 'selected' : '';
       const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${id}.png`;
+      const fallback1 = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons/${id}.png`;
+      const fallback2 = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
       return `<div class="avatar-option ${sel}" data-id="${id}" onclick="seleccionarAvatar(${id})">
-        <img src="${sprite}" onerror="this.style.display='none'" />
+        <img src="${sprite}" onerror="if(this.src!=='${fallback1}'){this.src='${fallback1}'}else{this.onerror=null;this.src='${fallback2}'}" />
       </div>`;
     }).join('');
     document.getElementById('editar-perfil-overlay').style.display = 'flex';
