@@ -1100,7 +1100,8 @@
     list.innerHTML = `<div class="selector-none" onclick="seleccionarItem('')">— Ninguno —</div>` +
       datos.map(d => {
         const sel = valorActual === d.nombre ? 'selected' : '';
-        return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','',${JSON.stringify(d.sprite)})">
+        const spriteEscaped = (d.sprite || '').replace(/'/g, "\\'");
+        return `<div class="selector-item ${sel}" onclick="seleccionarItem('${d.nombre.replace(/'/g,"\\'")}','','${spriteEscaped}')">
           ${d.sprite ? `<img class="item-sprite" src="${d.sprite}" onerror="this.style.display='none'" />` : ''}
           ${d.nombre}
         </div>`;
